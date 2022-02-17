@@ -121,7 +121,7 @@ pub fn write_array<S: Write, T: BinaryEncoder<T>>(
             size += value.encode(stream)?;
         }
     } else {
-        size += write_i32(stream, -1)?;
+        size += write_i32(stream, 0)?;
     }
     Ok(size)
 }
