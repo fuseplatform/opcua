@@ -7,6 +7,7 @@ use std::{
         atomic::{AtomicU32, Ordering},
         Arc, RwLock,
     },
+    time::Instant,
     u32,
 };
 
@@ -21,6 +22,7 @@ use opcua_types::{status_code::StatusCode, *};
 use crate::{
     callbacks::{OnConnectionStatusChange, OnSessionClosed},
     message_queue::MessageQueue,
+    subscription_state::{self, SubscriptionState},
 };
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -77,6 +79,8 @@ pub(crate) struct SessionState {
     monitored_item_handle: Handle,
     /// Subscription acknowledgements pending for send
     subscription_acknowledgements: Vec<SubscriptionAcknowledgement>,
+    /// Subscription state
+    subscription_state: Arc<RwLock<SubscriptionState>>,
     /// The message queue
     message_queue: Arc<RwLock<MessageQueue>>,
     /// Connection closed callback
@@ -116,6 +120,7 @@ impl SessionState {
     pub fn new(
         ignore_clock_skew: bool,
         secure_channel: Arc<RwLock<SecureChannel>>,
+        subscription_state: Arc<RwLock<SubscriptionState>>,
         message_queue: Arc<RwLock<MessageQueue>>,
     ) -> SessionState {
         let id = NEXT_SESSION_ID.fetch_add(1, Ordering::Relaxed);
@@ -134,8 +139,9 @@ impl SessionState {
             session_id: NodeId::null(),
             authentication_token: NodeId::null(),
             monitored_item_handle: Handle::new(Self::FIRST_MONITORED_ITEM_HANDLE),
-            message_queue,
             subscription_acknowledgements: Vec::new(),
+            subscription_state,
+            message_queue,
             session_closed_callback: None,
             connection_status_callback: None,
         }
@@ -248,6 +254,12 @@ impl SessionState {
             subscription_acknowledgements,
         };
         let request_handle = self.async_send_request(request, true)?;
+
+        {
+            let mut subscription_state = trace_write_lock_unwrap!(self.subscription_state);
+            subscription_state.set_last_publish_request(Instant::now());
+        }
+
         debug!("async_publish, request sent with handle {}", request_handle);
         Ok(request_handle)
     }
