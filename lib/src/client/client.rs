@@ -7,6 +7,7 @@
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use chrono::Duration;
+use tokio::runtime::Handle;
 
 use super::{
     config::{ClientConfig, ClientEndpoint, ANONYMOUS_USER_TOKEN_ID},
@@ -486,13 +487,19 @@ impl Client {
                 self.config.performance.ignore_clock_skew,
                 self.config.performance.single_threaded_executor,
             );
-            session.connect()?;
+            let connect_result = session.connect();
+            if let Err(e) = connect_result {
+                dispose_session(session);
+                return Err(e);
+            }
             let result = session.get_endpoints()?;
             session.disconnect();
+            dispose_session(session);
+            
             Ok(result)
         }
     }
-
+    
     /// Connects to a discovery server and asks the server for a list of
     /// available server [`ApplicationDescription`].
     ///
@@ -751,5 +758,14 @@ impl Client {
                 client_endpoint.url, client_endpoint.security_policy
             ))
         }
+    }
+}
+
+fn dispose_session(session: Session) {
+    match Handle::try_current() {
+        Ok(handle) => {
+            handle.spawn_blocking(move || drop(session));
+        },
+        Err(_) => drop(session),
     }
 }
