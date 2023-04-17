@@ -50,6 +50,12 @@ impl<'de> Deserialize<'de> for DateTime {
         let v = String::deserialize(deserializer)?;
         let dt = DateTime::parse_from_rfc3339(&v)
             .map_err(|_| D::Error::custom("Cannot parse date time"))?;
+
+        let now = chrono::Utc::now();
+        if (dt.date_time - now).num_seconds() > 3600 {
+            warn!("unexpectedly deserializing {v} to {dt}, but it is {now} now");
+        }
+
         Ok(dt)
     }
 }
