@@ -48,6 +48,7 @@ impl<'de> Deserialize<'de> for DateTime {
         D: Deserializer<'de>,
     {
         let v = String::deserialize(deserializer)?;
+        println!("{v}");
         let dt = DateTime::parse_from_rfc3339(&v)
             .map_err(|_| D::Error::custom("Cannot parse date time"))?;
 
