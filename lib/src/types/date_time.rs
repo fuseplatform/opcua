@@ -48,14 +48,9 @@ impl<'de> Deserialize<'de> for DateTime {
         D: Deserializer<'de>,
     {
         let v = String::deserialize(deserializer)?;
-        println!("{v}");
+
         let dt = DateTime::parse_from_rfc3339(&v)
             .map_err(|_| D::Error::custom("Cannot parse date time"))?;
-
-        let now = chrono::Utc::now();
-        if (dt.date_time - now).num_seconds() > 3600 {
-            warn!("unexpectedly deserializing {v} to {dt}, but it is {now} now");
-        }
 
         Ok(dt)
     }
@@ -75,9 +70,20 @@ impl BinaryEncoder<DateTime> for DateTime {
     fn decode<S: Read>(stream: &mut S, decoding_options: &DecodingOptions) -> EncodingResult<Self> {
         let ticks = read_i64(stream)?;
         let date_time = DateTime::from(ticks);
+
+        let now = chrono::Utc::now();
+        if (date_time.date_time - now).num_seconds() > 3600 {
+            warn!("unexpectedly deserializing {ticks} to {date_time}, but it is {now} now");
+        }
+        
+        let corrected_dt = date_time - decoding_options.client_offset;
+        if (corrected_dt.date_time - now).num_seconds() > 3600 {
+            warn!("date time client offset is changing {date_time} to {corrected_dt}, but it is {now} now");
+        }
+
         // Client offset is a value that can be overridden to account for time discrepancies between client & server -
         // note perhaps it is not a good idea to do it right here but it is the lowest point to intercept DateTime values.
-        Ok(date_time - decoding_options.client_offset)
+        Ok(corrected_dt)
     }
 }
 
