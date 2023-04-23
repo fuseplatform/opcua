@@ -133,4 +133,7 @@ pub fn secure_channel_nonce_none() {
     assert!(sc
         .set_remote_nonce_from_byte_string(&ByteString::from(b""))
         .is_ok());
+    assert!(sc
+        .set_remote_nonce_from_byte_string(&ByteString::null())
+        .is_ok());
 }

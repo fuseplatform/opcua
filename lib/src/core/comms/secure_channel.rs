@@ -300,11 +300,25 @@ impl SecureChannel {
         remote_nonce: &ByteString,
     ) -> Result<(), StatusCode> {
         if let Some(ref remote_nonce) = remote_nonce.value {
-            self.remote_nonce = remote_nonce.to_vec();
-            Ok(())
-        } else {
+            if self.security_policy != SecurityPolicy::None
+                && remote_nonce.len() != self.security_policy.secure_channel_nonce_length()
+            {
+                error!(
+                    "Remote nonce is invalid length {}, expecting {}. {:?}",
+                    remote_nonce.len(),
+                    self.security_policy.secure_channel_nonce_length(),
+                    remote_nonce
+                );
+                Err(StatusCode::BadNonceInvalid)
+            } else {
+                self.remote_nonce = remote_nonce.to_vec();
+                Ok(())
+            }
+        } else if self.security_policy != SecurityPolicy::None {
             error!("Remote nonce is invalid {:?}", remote_nonce);
             Err(StatusCode::BadNonceInvalid)
+        } else {
+            Ok(())
         }
     }
 
@@ -1005,7 +1019,7 @@ impl SecureChannel {
 
     pub fn local_nonce_as_byte_string(&self) -> ByteString {
         if self.local_nonce.is_empty() {
-            ByteString::null()
+            ByteString::from(&[0u8; 32])
         } else {
             ByteString::from(&self.local_nonce)
         }

@@ -462,9 +462,13 @@ impl SessionState {
             // server and use that offset to compensate for the difference in time when setting
             // the timestamps in the request headers and when decoding timestamps in messages
             // received from the server.
-            if self.ignore_clock_skew && !response.response_header.timestamp.is_null() {
+            if self.ignore_clock_skew
+                && !response.response_header.timestamp.is_null()
+                && response.response_header.timestamp > DateTime::ymd(2000, 1, 1)
+            {
                 let offset = response.response_header.timestamp - DateTime::now();
-                // Make sure to apply the offset to the security token in the current response.
+
+               // Make sure to apply the offset to the security token in the current response.
                 security_token.created_at = security_token.created_at - offset;
                 // Update the client offset by adding the new offset. When the secure channel is
                 // renewed its already using the client offset calculated when issuing the secure
