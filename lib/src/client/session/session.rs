@@ -1379,6 +1379,9 @@ impl SessionService for Session {
                 // and the server and use that to compensate for the difference in time.
                 if self.ignore_clock_skew && !response.response_header.timestamp.is_null() {
                     let offset = response.response_header.timestamp - DateTime::now();
+
+                    info!("handling CreateSessionResponse, received timestamp {}, now is {}, offset is {}", response.response_header.timestamp, DateTime::now(), offset);
+
                     // Update the client offset by adding the new offset.
                     session_state.set_client_offset(offset);
                 }
