@@ -48,10 +48,8 @@ impl<'de> Deserialize<'de> for DateTime {
         D: Deserializer<'de>,
     {
         let v = String::deserialize(deserializer)?;
-
         let dt = DateTime::parse_from_rfc3339(&v)
             .map_err(|_| D::Error::custom("Cannot parse date time"))?;
-
         Ok(dt)
     }
 }
@@ -70,7 +68,6 @@ impl BinaryEncoder<DateTime> for DateTime {
     fn decode<S: Read>(stream: &mut S, decoding_options: &DecodingOptions) -> EncodingResult<Self> {
         let ticks = read_i64(stream)?;
         let date_time = DateTime::from(ticks);
-
         // Client offset is a value that can be overridden to account for time discrepancies between client & server -
         // note perhaps it is not a good idea to do it right here but it is the lowest point to intercept DateTime values.
         Ok(date_time - decoding_options.client_offset)

@@ -195,7 +195,7 @@ impl SessionState {
 
     pub fn set_client_offset(&mut self, offset: Duration) {
         self.client_offset = self.client_offset + offset;
-        info!("Client offset set to {}", self.client_offset);
+        debug!("Client offset set to {}", self.client_offset);
     }
 
     pub fn set_session_id(&mut self, session_id: NodeId) {

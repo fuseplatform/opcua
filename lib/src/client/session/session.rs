@@ -1383,8 +1383,6 @@ impl SessionService for Session {
                 {
                     let offset = response.response_header.timestamp - DateTime::now();
 
-                    info!("handling CreateSessionResponse, received timestamp {}, now is {}, offset is {}", response.response_header.timestamp, DateTime::now(), offset);
-
                     // Update the client offset by adding the new offset.
                     session_state.set_client_offset(offset);
                 }
