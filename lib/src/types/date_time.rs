@@ -71,20 +71,9 @@ impl BinaryEncoder<DateTime> for DateTime {
         let ticks = read_i64(stream)?;
         let date_time = DateTime::from(ticks);
 
-        let now = chrono::Utc::now();
-        if (date_time.date_time - now).num_seconds() > 3600 {
-            warn!("unexpectedly deserializing {ticks} to {date_time}, but it is {now} now");
-        }
-        warn!("client offset = {}", decoding_options.client_offset);
-        
-        let corrected_dt = date_time - decoding_options.client_offset;
-        if (corrected_dt.date_time - now).num_seconds() > 3600 {
-            warn!("date time client offset is changing {date_time} to {corrected_dt}, but it is {now} now");
-        }
-
         // Client offset is a value that can be overridden to account for time discrepancies between client & server -
         // note perhaps it is not a good idea to do it right here but it is the lowest point to intercept DateTime values.
-        Ok(corrected_dt)
+        Ok(date_time - decoding_options.client_offset)
     }
 }
 

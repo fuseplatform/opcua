@@ -1377,7 +1377,10 @@ impl SessionService for Session {
                 }
                 // When ignoring clock skew, we calculate the time offset between the client
                 // and the server and use that to compensate for the difference in time.
-                if self.ignore_clock_skew && !response.response_header.timestamp.is_null() {
+                if self.ignore_clock_skew
+                    && !response.response_header.timestamp.is_null()
+                    && response.response_header.timestamp > DateTime::ymd(2000, 1, 1)
+                {
                     let offset = response.response_header.timestamp - DateTime::now();
 
                     info!("handling CreateSessionResponse, received timestamp {}, now is {}, offset is {}", response.response_header.timestamp, DateTime::now(), offset);
