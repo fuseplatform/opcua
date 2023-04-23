@@ -75,6 +75,7 @@ impl BinaryEncoder<DateTime> for DateTime {
         if (date_time.date_time - now).num_seconds() > 3600 {
             warn!("unexpectedly deserializing {ticks} to {date_time}, but it is {now} now");
         }
+        warn!("client offset = {}", decoding_options.client_offset);
         
         let corrected_dt = date_time - decoding_options.client_offset;
         if (corrected_dt.date_time - now).num_seconds() > 3600 {
