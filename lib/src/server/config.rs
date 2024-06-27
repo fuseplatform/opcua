@@ -563,6 +563,8 @@ pub struct ServerConfig {
     pub default_endpoint: Option<String>,
     /// Endpoints supported by the server
     pub endpoints: BTreeMap<String, ServerEndpoint>,
+    /// Clear all sessions on transport finish
+    pub clear_sessions_on_transport_finish: bool,
 }
 
 impl Config for ServerConfig {
@@ -667,6 +669,7 @@ impl Default for ServerConfig {
             performance: Performance {
                 single_threaded_executor: false,
             },
+            clear_sessions_on_transport_finish: true,
         }
     }
 }
@@ -723,6 +726,7 @@ impl ServerConfig {
             performance: Performance {
                 single_threaded_executor: false,
             },
+            clear_sessions_on_transport_finish: true,
         }
     }
 
