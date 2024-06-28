@@ -388,4 +388,12 @@ impl ServerBuilder {
         self.config.performance.single_threaded_executor = false;
         self
     }
+
+    /// Configures the server to clear all sessions when a transport is finished.
+    /// Clearing all sessions is the default behaviour, if you want to keep sessions set this to
+    /// false.
+    pub fn cleanup_sessions_on_transport_close(mut self, cleanup: bool) -> Self {
+        self.config.clear_sessions_on_transport_finish = cleanup;
+        self
+    }
 }

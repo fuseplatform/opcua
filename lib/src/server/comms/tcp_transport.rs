@@ -120,6 +120,8 @@ pub struct TcpTransport {
     pending_chunks: Vec<MessageChunk>,
     /// Sessions associated with this connection. Normally there would be one, but potentially there could be more
     session_manager: Arc<RwLock<SessionManager>>,
+    /// Clear all sessions on transport finish
+    clear_on_finish: bool,
 }
 
 impl Transport for TcpTransport {
@@ -127,20 +129,34 @@ impl Transport for TcpTransport {
         self.transport_state
     }
 
-    // Terminates the connection and the session
     fn finish(&mut self, status_code: StatusCode) {
-        if !self.is_finished() {
-            debug!(
-                "Transport is being placed in finished state, code {}",
-                status_code
-            );
-            self.transport_state = TransportState::Finished(status_code);
-            // Clear sessions
+        if self.is_finished() {
+            trace!("Transport is being placed in finished state when it is already finished, ignoring code {}", status_code);
+            return;
+        }
+
+        debug!(
+            "Transport is being placed in finished state, transport id {} code {}",
+            self.transport_id, status_code
+        );
+
+        if self.clear_on_finish {
             let mut session_manager = trace_write_lock!(self.session_manager);
+            debug!("Current active sessions {}", session_manager.sessions.len());
             session_manager.clear(self.address_space.clone());
         } else {
-            trace!("Transport is being placed in finished state when it is already finished, ignoring code {}", status_code);
+            debug!("Current active sessions will not be cleared");
         }
+
+        // Remove the transport from the address space
+        self.transport_state = TransportState::Finished(status_code);
+        let mut address_space = trace_write_lock!(self.address_space);
+        let node_id = self.transport_id.clone();
+        let removed = address_space.delete(&node_id, true);
+        debug!(
+            "Transport {} removed from address space {:?}",
+            &node_id, removed
+        );
     }
 
     fn client_address(&self) -> Option<SocketAddr> {
@@ -158,6 +174,7 @@ impl TcpTransport {
         server_state: Arc<RwLock<ServerState>>,
         address_space: Arc<RwLock<AddressSpace>>,
         session_manager: Arc<RwLock<SessionManager>>,
+        clear_sessions_on_finish: bool,
     ) -> TcpTransport {
         let decoding_options = {
             let server_state = trace_read_lock!(server_state);
@@ -194,6 +211,7 @@ impl TcpTransport {
             last_received_sequence_number: 0,
             pending_chunks: Vec::with_capacity(2),
             session_manager,
+            clear_on_finish: clear_sessions_on_finish,
         }
     }
 
