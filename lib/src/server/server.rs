@@ -77,8 +77,8 @@ pub struct Server {
     connections: Arc<RwLock<Connections>>,
     /// Session manager
     session_manager: Arc<RwLock<SessionManager>>,
-    /// Clear all sessions on transport finished
-    clear_sessions_on_finish: bool,
+    /// Share all sessions across all transports or create isolated session stores
+    share_sessions_across_transports: bool,
 }
 
 impl From<ServerConfig> for Server {
@@ -146,7 +146,7 @@ impl Server {
         }
         certificate_store.set_check_time(config.certificate_validation.check_time);
 
-        let clear_sessions_on_finish = config.clear_sessions_on_transport_finish;
+        let share_sessions_across_transports = config.share_sessions_across_transports;
         let config = Arc::new(RwLock::new(config));
 
         // Set some values in the address space from the server state
@@ -209,7 +209,7 @@ impl Server {
             certificate_store,
             connections: Arc::new(RwLock::new(Vec::new())),
             session_manager: Arc::new(RwLock::new(SessionManager::default())),
-            clear_sessions_on_finish,
+            share_sessions_across_transports,
         };
 
         let mut server_metrics = trace_write_lock!(server_metrics);
@@ -634,7 +634,7 @@ impl Server {
             self.server_state.clone(),
             self.address_space.clone(),
             self.session_manager.clone(),
-            self.clear_sessions_on_finish,
+            self.share_sessions_across_transports,
         )
     }
 

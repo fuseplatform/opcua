@@ -125,7 +125,7 @@ fn endpoint_aes256sha256rsapss_sign_encrypt(port: u16) -> EndpointDescription {
 fn server_abort() {
     opcua::console_logging::init();
 
-    let server = Arc::new(RwLock::new(new_server(0, true)));
+    let server = Arc::new(RwLock::new(new_server(0)));
     let server2 = server.clone();
 
     // This is pretty lame, but to tell if the thread has terminated or not, there is no try_join
@@ -410,7 +410,7 @@ fn disconnect_one_client() {
     let client_endpoint = endpoint_basic128rsa15_sign_encrypt(port);
     let second_client_endpoint = endpoint_none(port);
     let identity_token = client_x509_token();
-    connect_with_client_test_keep_sessions(
+    connect_with_client_test(
         port,
         move |_rx_client_command: mpsc::Receiver<ClientCommand>, mut client: Client| {
             info!(
@@ -487,6 +487,7 @@ fn disconnect_one_client() {
         },
     );
 }
+
 /// Connect to a server, read a variable, write a value to the variable, read the variable to verify it changed
 #[test]
 #[ignore]

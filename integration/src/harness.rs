@@ -98,7 +98,7 @@ pub fn client_invalid_user_token() -> IdentityToken {
     IdentityToken::UserName(CLIENT_USERPASS_ID.into(), "xxxx".into())
 }
 
-pub fn new_server(port: u16, clear_sessions: bool) -> Server {
+pub fn new_server(port: u16) -> Server {
     let endpoint_path = "/";
 
     // Both client and server define this
@@ -120,7 +120,6 @@ pub fn new_server(port: u16, clear_sessions: bool) -> Server {
         .create_sample_keypair(true)
         .pki_dir("./pki-server")
         .discovery_server_url(None)
-        .cleanup_sessions_on_transport_close(clear_sessions)
         .host_and_port(hostname(), port)
         .user_token(sample_user_id, server_user_token())
         .user_token(x509_user_id, server_x509_token())
@@ -346,11 +345,7 @@ fn new_client(_port: u16) -> Client {
 }
 
 pub fn new_client_server(port: u16) -> (Client, Server) {
-    (new_client(port), new_server(port, true))
-}
-
-pub fn new_client_server_keep_sessions(port: u16) -> (Client, Server) {
-    (new_client(port), new_server(port, false))
+    (new_client(port), new_server(port))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -670,14 +665,6 @@ where
     CT: FnOnce(mpsc::Receiver<ClientCommand>, Client) + Send + 'static,
 {
     let (client, server) = new_client_server(port);
-    perform_test(client, server, Some(client_test), regular_server_test);
-}
-
-pub fn connect_with_client_test_keep_sessions<CT>(port: u16, client_test: CT)
-where
-    CT: FnOnce(mpsc::Receiver<ClientCommand>, Client) + Send + 'static,
-{
-    let (client, server) = new_client_server_keep_sessions(port);
     perform_test(client, server, Some(client_test), regular_server_test);
 }
 
