@@ -140,7 +140,10 @@ impl OnSessionClosed for SessionState {
     fn on_session_closed(&mut self, status_code: StatusCode) {
         debug!("Session was closed with status = {}", status_code);
         if let Some(ref mut session_closed_callback) = self.session_closed_callback {
+            debug!("session closed callback is set, executing...");
             session_closed_callback.on_session_closed(status_code);
+        } else {
+            debug!("session closed callback is None");
         }
     }
 }
@@ -587,6 +590,7 @@ impl SessionState {
                     StatusCode::BadSessionClosed
                     | StatusCode::BadSessionIdInvalid
                     | StatusCode::BadNoSubscription
+                    | StatusCode::BadTcpMessageTooLarge
                     | StatusCode::BadSubscriptionIdInvalid => {
                         self.on_session_closed(service_result)
                     }
